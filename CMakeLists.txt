@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+project("Raytracer")
+add_executable(Raytracer src/vec_maths.c src/graphics.c raytrace.c )
+target_include_directories(Raytracer PUBLIC include)
+target_link_libraries(Raytracer PUBLIC m)
