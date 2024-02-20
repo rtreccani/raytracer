@@ -67,15 +67,17 @@ tris_t trises[12] = {
     {{&cube_points[3], &cube_points[5], &cube_points[7]}, 'B', CYAN, MATTE},
 };
 
-void construct_camera_ray(int x_pos, int y_pos, ray_t *ret_ray)
+ray_t construct_camera_ray(int x_pos, int y_pos)
 {
-    ret_ray->p_origin = &camera_position;
-    ret_ray->p_dir->z = FOCAL_LENGTH;
-    ret_ray->p_dir->x = camera_position.x - ((x_pos - (CAMERA_RES_X / 2)) * (CAMERA_SENSOR_SIZE / CAMERA_RES_X));
-    ret_ray->p_dir->y = camera_position.y - ((y_pos - (CAMERA_RES_Y / 2)) * (CAMERA_SENSOR_SIZE / CAMERA_RES_Y));
+    ray_t ret_ray;
+    ret_ray.p_origin = &camera_position;
+    ret_ray.p_dir->z = FOCAL_LENGTH;
+    ret_ray.p_dir->x = camera_position.x - ((x_pos - (CAMERA_RES_X / 2)) * (CAMERA_SENSOR_SIZE / CAMERA_RES_X));
+    ret_ray.p_dir->y = camera_position.y - ((y_pos - (CAMERA_RES_Y / 2)) * (CAMERA_SENSOR_SIZE / CAMERA_RES_Y));
+    return ret_ray;
 }
 
-beam_eval_t find_closest_tris_shade(ray_t *ray, tris_t *trises, int tris_length)
+beam_eval_t find_closest_tris_shade(ray_t ray, tris_t *trises, int tris_length)
 {
     beam_eval_t best_guess;
     best_guess.col = BLACK;
@@ -83,7 +85,7 @@ beam_eval_t find_closest_tris_shade(ray_t *ray, tris_t *trises, int tris_length)
     float closest_dist = 100000000;
     for (int i = 0; i < tris_length; i++)
     {
-        float tris_distance = doesRayIntersectTris(&trises[i], ray);
+        float tris_distance = doesRayIntersectTris(trises[i], ray);
         if (tris_distance > 0 && tris_distance < closest_dist)
         {
             closest_dist = tris_distance;
@@ -96,7 +98,7 @@ beam_eval_t find_closest_tris_shade(ray_t *ray, tris_t *trises, int tris_length)
     return best_guess;
 }
 
-float find_closest_tris(ray_t *ray, tris_t *trises, int tris_length, tris_t* result_tris)
+float find_closest_tris(ray_t ray, tris_t *trises, int tris_length, tris_t* result_tris)
 {
     int best_guess = 0;
     float closest_dist = 100000000;
@@ -104,7 +106,7 @@ float find_closest_tris(ray_t *ray, tris_t *trises, int tris_length, tris_t* res
     for (int i = 0; i < tris_length; i++)
     {
         tris_found = 1;
-        float tris_distance = doesRayIntersectTris(&trises[i], ray);
+        float tris_distance = doesRayIntersectTris(trises[i], ray);
         if (tris_distance > 0 && tris_distance < closest_dist)
         {
             best_guess = i;
@@ -118,7 +120,7 @@ float find_closest_tris(ray_t *ray, tris_t *trises, int tris_length, tris_t* res
     result_tris = &trises[best_guess];
 }
 
-beam_eval_t evaluate_ray(ray_t *ray, tris_t *trises, int tris_length, int recurse_depth, vec_3_t* vector_source)
+beam_eval_t evaluate_ray(ray_t ray, tris_t *trises, int tris_length, int recurse_depth, vec_3_t* vector_source)
 {
     beam_eval_t beam_result;
     tris_t *p_nearest_tris;
@@ -128,16 +130,17 @@ beam_eval_t evaluate_ray(ray_t *ray, tris_t *trises, int tris_length, int recurs
             beam_result.col = p_nearest_tris->tris_col;
             beam_result.lum = 1;
             break;
-        case GLOSS:
-            vec_3_t reflection_position, inbound_beam_normalised, inbound_beam_scaled_to_reflection, outbound_beam;
-            ray_t new_ray;
-            vec3_scalar_mult(ray->p_dir, 1/vec3_magnitude(ray->p_dir), &inbound_beam_normalised);
-            vec3_scalar_mult(&inbound_beam_normalised, distance_to_obj, &inbound_beam_scaled_to_reflection);
-            vec3_add(ray->p_origin, &inbound_beam_scaled_to_reflection, &reflection_position);
-            new_ray.p_origin = &reflection_position;
-            vec3_reflection(&inbound_beam_normalised, &outbound_beam, p_nearest_tris);
-            new_ray.p_dir = &outbound_beam;
-            return evaluate_ray()// next step
+        // case GLOSS:
+            // vec_3_t reflection_position, inbound_beam_normalised, inbound_beam_scaled_to_reflection, outbound_beam;
+            // ray_t new_ray;
+            // inbound_beam_normalised = vec3_scalar_mult(*ray->p_dir, 1/vec3_magnitude(ray->p_dir));
+            // inbound_beam_scaled_to_reflection = vec3_scalar_mult(inbound_beam_normalised, distance_to_obj);
+            // reflection_position = vec3_add(*ray->p_origin, inbound_beam_scaled_to_reflection);
+            // new_ray.p_origin = &reflection_position;
+            // vec3_reflection(&inbound_beam_normalised, &outbound_beam, p_nearest_tris);
+            // new_ray.p_dir = &outbound_beam;
+            // return evaluate_ray()// next step
+    }
 }
 
 
@@ -160,8 +163,8 @@ void render(camera_t *cam)
     {
         for (int x = 0; x < CAMERA_RES_X; x++)
         {
-            construct_camera_ray(x, y, &camera_ray);
-            camera_buffer[y][x] = find_closest_tris_shade(&camera_ray, trises, 12);
+            camera_ray = construct_camera_ray(x, y);
+            camera_buffer[y][x] = find_closest_tris_shade(camera_ray, trises, 12);
         }
     }
     system("clear");
@@ -183,7 +186,7 @@ int main(int argc, void **argv)
     {
         for (int i = 0; i < 8; i++)
         {
-            vec_rotate_3d(&orig_cube_points[i], &cube_points[i], cube_rotation.x, cube_rotation.y, cube_rotation.z);
+            cube_points[i] = vec_rotate_3d(orig_cube_points[i], cube_rotation.x, cube_rotation.y, cube_rotation.z);
         }
         render(&cam);
         usleep(50000);

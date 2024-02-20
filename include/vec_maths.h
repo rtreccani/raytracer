@@ -27,19 +27,19 @@ typedef struct{
 } ray_t2;
 
 
-void vec_rotate_x(vec_3_t* vec_in, vec_3_t* vec_out, float x_rot_val);
-void vec_rotate_y(vec_3_t* vec_in, vec_3_t* vec_out, float y_rot_val);
-void vec_rotate_z(vec_3_t* vec_in, vec_3_t* vec_out, float z_rot_val);
-void vec_rotate_3d(vec_3_t* vec_in, vec_3_t* vec_out, float a, float b, float c);
-void vec_get_reflection(vec_3_t* vec_in, vec_3_t* vec_out, tris_t* tris);
+vec_3_t vec_rotate_x(vec_3_t vec_in, float x_rot_val);
+vec_3_t vec_rotate_y(vec_3_t vec_in, float y_rot_val);
+vec_3_t vec_rotate_z(vec_3_t vec_in, float z_rot_val);
+vec_3_t vec_rotate_3d(vec_3_t vec_in, float a, float b, float c);
+vec_3_t vec_get_reflection(vec_3_t vec_in, tris_t* tris);
 
-void printvec3d(vec_3_t* vec);
-float doesRayIntersectTris(tris_t* p_tris, ray_t* p_ray);
-void vec3_add(vec_3_t* p1, vec_3_t* p2, vec_3_t* p_return);
-void vec3_subtract(vec_3_t* p1, vec_3_t* p2, vec_3_t* p_return);
-void vec3_cross_product(vec_3_t* p1, vec_3_t* p2, vec_3_t* p_return);
-float vec3_dot_product(vec_3_t* p1, vec_3_t* p2);
-void vec3_scalar_mult(vec_3_t* p1, float scalar, vec_3_t* p_return);
-float vec3_magnitude(vec_3_t* p_vec);
+void printvec3d(vec_3_t vec);
+float doesRayIntersectTris(tris_t p_tris, ray_t p_ray);
+vec_3_t vec3_add(vec_3_t p1, vec_3_t p2);
+vec_3_t vec3_subtract(vec_3_t p1, vec_3_t p2);
+vec_3_t vec3_cross_product(vec_3_t p1, vec_3_t p2);
+float vec3_dot_product(vec_3_t p1, vec_3_t p2);
+vec_3_t vec3_scalar_mult(vec_3_t p1, float scalar);
+float vec3_magnitude(vec_3_t p_vec);
 
 #endif
