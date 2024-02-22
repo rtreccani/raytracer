@@ -1,16 +1,22 @@
 #ifndef __GRAPHICS_H
 #define __GRAPHICS_H
 
-typedef enum{
-    RED,
-    GREEN,
-    YELLOW,
-    BLUE,
-    MAGENTA,
-    CYAN,
-    WHITE,
-    BLACK,
-} colors_t;
+#include <simple2d.h>
+
+#define C_RED {1.0, 0.0, 0.0}
+#define C_GREEN {0.0, 1.0, 0.0}
+#define C_BLUE  {0.0, 0.0, 1.0}
+#define C_WHITE {1.0, 1.0, 1.0}
+#define C_BLACK {0.0, 0.0, 0.0}
+#define C_YELLOW {1.0, 1.0, 0.0}
+#define C_MAGENTA {1.0, 0.0, 1.0}
+#define C_CYAN {0.0, 1.0, 1.0}
+
+typedef struct{
+    float r;
+    float g;
+    float b;
+} col_t;
 
 typedef enum{
     GLOSS,
@@ -19,12 +25,10 @@ typedef enum{
 } surface_t;
 
 typedef struct{
-    char shade;
-    colors_t col;
+    col_t col;
     surface_t surf;
-    float lum;
 } beam_eval_t;
 
-void draw_dot(char, colors_t, float);
+void draw_pixel(int, int, int, int, col_t);
 
 #endif

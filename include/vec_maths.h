@@ -11,14 +11,13 @@ typedef struct{
 
 typedef struct{
     vec_3_t* p_points[3];
-    char tris_shade;
-    colors_t tris_col;
+    col_t tris_col;
     surface_t tris_surf;
 } tris_t;
 
 typedef struct{
-    vec_3_t* p_origin;
-    vec_3_t* p_dir;
+    vec_3_t p_origin;
+    vec_3_t p_dir;
 } ray_t;
 
 typedef struct{

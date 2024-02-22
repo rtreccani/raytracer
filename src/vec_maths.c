@@ -96,20 +96,20 @@ float doesRayIntersectTris(tris_t tris, ray_t ray){
     float normal_mag = vec3_magnitude(normal);
 
     /*check if ray and tris are parallel */
-    float n_dot_ray_dir = vec3_dot_product(normal, *ray.p_dir);
+    float n_dot_ray_dir = vec3_dot_product(normal, ray.p_dir);
     if(abs(n_dot_ray_dir) < 0.0001){
         return -1.0;
     }
 
     float d = -1 * vec3_dot_product(normal, *tris.p_points[0]);
-    float t = -1 * ((vec3_dot_product(normal, *ray.p_origin) + d) / n_dot_ray_dir);
+    float t = -1 * ((vec3_dot_product(normal, ray.p_origin) + d) / n_dot_ray_dir);
 
     if(t < 0){
         return -1.0;
     }
 
     /* calculate P */
-    vec_3_t P = vec3_add(*ray.p_origin, vec3_scalar_mult(*ray.p_dir, t));
+    vec_3_t P = vec3_add(ray.p_origin, vec3_scalar_mult(ray.p_dir, t));
 
     //edge 0
     vec_3_t C = vec3_cross_product(p0p1, vec3_subtract(P, *tris.p_points[0]));
