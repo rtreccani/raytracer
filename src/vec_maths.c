@@ -84,7 +84,7 @@ float vec3_magnitude(vec_3_t vec){
 
 /* return: length til intersect. -1 if doesn't intersect */
 float doesRayIntersectTris(tris_t tris, ray_t ray){
-    float ray_dist = -1;
+    // ray.dir = vec3_scalar_mult(ray.dir, 1/vec3_magnitude(ray.dir));
 
     /* compute normal of plane across tris */
     vec_3_t p0p1 = vec3_subtract(*tris.p_points[1], *tris.p_points[0]);
@@ -96,42 +96,42 @@ float doesRayIntersectTris(tris_t tris, ray_t ray){
     float normal_mag = vec3_magnitude(normal);
 
     /*check if ray and tris are parallel */
-    float n_dot_ray_dir = vec3_dot_product(normal, ray.p_dir);
-    if(abs(n_dot_ray_dir) < 0.0001){
+    float n_dot_ray_dir = vec3_dot_product(normal, ray.dir);
+    if(abs(n_dot_ray_dir) < EPSILON){
         return -1.0;
     }
 
     float d = -1 * vec3_dot_product(normal, *tris.p_points[0]);
-    float t = -1 * ((vec3_dot_product(normal, ray.p_origin) + d) / n_dot_ray_dir);
+    float t = -1 * ((vec3_dot_product(normal, ray.origin) + d) / n_dot_ray_dir);
 
-    if(t < 0){
+    if(t < EPSILON){
         return -1.0;
     }
 
     /* calculate P */
-    vec_3_t P = vec3_add(ray.p_origin, vec3_scalar_mult(ray.p_dir, t));
+    vec_3_t P = vec3_add(ray.origin, vec3_scalar_mult(ray.dir, t));
 
     //edge 0
     vec_3_t C = vec3_cross_product(p0p1, vec3_subtract(P, *tris.p_points[0]));
-    if(vec3_dot_product(normal, C) < 0){
+    if(vec3_dot_product(normal, C) < -EPSILON){
         return -1.0;
     }
 
     //edge 1
     C = vec3_cross_product(p1p2, vec3_subtract(P, *tris.p_points[1]));
-    if(vec3_dot_product(normal, C) < 0){
+    if(vec3_dot_product(normal, C) < -EPSILON){
         return -1.0;
     }
 
     //edge 2
     C = vec3_cross_product(p2p0, vec3_subtract(P, *tris.p_points[2]));
-    if(vec3_dot_product(normal, C) < 0){
+    if(vec3_dot_product(normal, C) < -EPSILON){
         return -1.0;
     }
     return t;
 }
 
-vec_3_t vec3_reflection(vec_3_t vec_in, tris_t tris){
+vec_3_t vec_get_reflection(vec_3_t vec_in, tris_t tris){
     vec_3_t vec_out;
     /* compute normal of plane across tris */
     vec_3_t p0p1, p1p2, p2p0, p0p2, normal, normal_normalised;
@@ -143,6 +143,8 @@ vec_3_t vec3_reflection(vec_3_t vec_in, tris_t tris){
     normal = vec3_cross_product(p0p1, p0p2);
     normal_normalised = vec3_scalar_mult(normal, 1/vec3_magnitude(normal));
 
-    vec_3_t scaled_diff = vec3_scalar_mult(normal, vec3_dot_product(vec_in, normal));
+    /* don't ask */
+    vec_3_t scaled_diff = vec3_scalar_mult(vec3_scalar_mult(normal_normalised, vec3_dot_product(vec_in, normal_normalised)), 2);
     vec_out = vec3_subtract(vec_in, scaled_diff);
+    return vec_out;
 }

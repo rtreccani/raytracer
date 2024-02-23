@@ -4,7 +4,7 @@
 #include <vec_maths.h>
 
 typedef struct{
-    ray_t2 ray;
+    ray_t ray;
     int res_x;
     int res_y;
     int sensor_size;

@@ -22,6 +22,8 @@ typedef enum{
     GLOSS,
     MATTE,
     EMISSIVE,
+    SEMIGLOSS,
+    NONE,
 } surface_t;
 
 typedef struct{
