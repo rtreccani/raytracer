@@ -35,7 +35,12 @@ vec_3_t vec3_add(vec_3_t p1, vec_3_t p2);
 vec_3_t vec3_subtract(vec_3_t p1, vec_3_t p2);
 vec_3_t vec3_cross_product(vec_3_t p1, vec_3_t p2);
 float vec3_dot_product(vec_3_t p1, vec_3_t p2);
+float vec3_norm_dot_product(vec_3_t p1, vec_3_t p2);
 vec_3_t vec3_scalar_mult(vec_3_t p1, float scalar);
 float vec3_magnitude(vec_3_t p_vec);
+
+vec_3_t vec3_generate_random_vector();
+vec_3_t get_tris_normal(tris_t tris);
+vec_3_t vec3_normalize(vec_3_t in);
 
 #endif

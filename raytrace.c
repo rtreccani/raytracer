@@ -6,11 +6,12 @@
 #include <camera.h>
 #include <graphics.h>
 
-#define CAMERA_RES_X 100
-#define CAMERA_RES_Y 100
-#define FOCAL_LENGTH 12.0f
-#define PIXEL_SIZE 8
+#define CAMERA_RES_X 500
+#define CAMERA_RES_Y 500
+#define FOCAL_LENGTH 2.5f
+#define PIXEL_SIZE 2
 #define CAMERA_SENSOR_SIZE 2.0f
+#define DIFFUSE_SAMPLE_COUNT 100
 
 S2D_Window* win;
 beam_eval_t camera_buffer[CAMERA_RES_Y][CAMERA_RES_X];
@@ -26,16 +27,23 @@ camera_t cam = {
     .res_y = CAMERA_RES_Y,
     .sensor_size = 1.5,
     .ray = {
-        .origin = {0, 0, -10},
+        .origin = {0, 0, -20},
         .dir = {0, 0, 1},
     },
 };
 
 vec_3_t light_points[4] = {
-    {3.5, -2, -2},
-    {3.5, 2, -2},
-    {4.5, -2, 2},
-    {4.5, 2, 2},
+    {3.5, -4, -4},
+    {3.5, 4, -4},
+    {4.5, -4, 4},
+    {4.5, 4, 4},
+};
+
+vec_3_t l2_points[4] = {
+    {-10, -10, -10},
+    {-10, -10, 10},
+    {10, -10, -10},
+    {10, -10, 10},
 };
 
 vec_3_t orig_cube_points[8] = {
@@ -53,26 +61,29 @@ vec_3_t cube_points[8];
 vec_3_t cube_rotation = {0,0,0};
 
 tris_t trises[] = {
-    {{&cube_points[0], &cube_points[2], &cube_points[4]}, C_RED, GLOSS}, // front surface
-    {{&cube_points[2], &cube_points[4], &cube_points[6]}, C_RED, GLOSS},
+    {{&cube_points[0], &cube_points[2], &cube_points[4]}, C_RED, EMISSIVE}, // front surface
+    {{&cube_points[2], &cube_points[6], &cube_points[4]}, C_RED, EMISSIVE},
 
-    {{&cube_points[0], &cube_points[1], &cube_points[3]}, C_GREEN, MATTE}, // left surface
-    {{&cube_points[0], &cube_points[2], &cube_points[3]}, C_GREEN, MATTE},
+    {{&cube_points[0], &cube_points[1], &cube_points[3]}, C_GREEN, EMISSIVE}, // left surface
+    {{&cube_points[0], &cube_points[3], &cube_points[2]}, C_GREEN, EMISSIVE},
 
-    {{&cube_points[0], &cube_points[1], &cube_points[4]}, C_YELLOW, MATTE}, // bottom surface
+    {{&cube_points[0], &cube_points[4], &cube_points[1]}, C_YELLOW, MATTE}, // bottom surface
     {{&cube_points[1], &cube_points[4], &cube_points[5]}, C_YELLOW, MATTE},
 
-    {{&cube_points[2], &cube_points[3], &cube_points[6]}, C_BLUE, MATTE}, // top surface
-    {{&cube_points[3], &cube_points[6], &cube_points[7]}, C_BLUE, MATTE},
+    {{&cube_points[2], &cube_points[3], &cube_points[6]}, C_BLUE, EMISSIVE}, // top surface
+    {{&cube_points[3], &cube_points[7], &cube_points[6]}, C_BLUE, EMISSIVE},
 
-    {{&cube_points[4], &cube_points[6], &cube_points[7]}, C_MAGENTA, MATTE}, // right surface
-    {{&cube_points[4], &cube_points[5], &cube_points[7]}, C_MAGENTA, MATTE},
+    {{&cube_points[4], &cube_points[6], &cube_points[7]}, C_MAGENTA, EMISSIVE}, // right surface
+    {{&cube_points[4], &cube_points[7], &cube_points[5]}, C_MAGENTA, EMISSIVE},
 
-    {{&cube_points[1], &cube_points[3], &cube_points[5]}, C_CYAN, MATTE}, // back surface
-    {{&cube_points[3], &cube_points[5], &cube_points[7]}, C_CYAN, MATTE},
+    {{&cube_points[1], &cube_points[5], &cube_points[3]}, C_CYAN, EMISSIVE}, // back surface
+    {{&cube_points[3], &cube_points[5], &cube_points[7]}, C_CYAN, EMISSIVE},
 
     {{&light_points[0], &light_points[1], &light_points[2]}, C_WHITE, EMISSIVE},
     {{&light_points[1], &light_points[2], &light_points[3]}, C_WHITE, EMISSIVE},
+
+    {{&l2_points[0], &l2_points[1], &l2_points[2]}, C_WHITE, EMISSIVE},
+    {{&l2_points[1], &l2_points[2], &l2_points[3]}, C_WHITE, EMISSIVE},
 };
 
 ray_t construct_camera_ray(int x_pos, int y_pos)
@@ -112,6 +123,8 @@ beam_eval_t evaluate_ray(ray_t ray, tris_t *trises, int tris_length, int recurse
     if(tris_index < 0){
         return (beam_result);
     }
+    ray_t new_ray;
+    float distance_to_obj;
 
     switch(trises[tris_index].tris_surf){
         case EMISSIVE:
@@ -120,21 +133,37 @@ beam_eval_t evaluate_ray(ray_t ray, tris_t *trises, int tris_length, int recurse
             break;
 
         case MATTE:
-            beam_result.col = trises[tris_index].tris_col;
-            beam_result.surf = MATTE;
+            vec_3_t normal = vec3_normalize(get_tris_normal(trises[tris_index]));
+
+            ray.dir = vec3_normalize(ray.dir);
+            distance_to_obj = doesRayIntersectTris(trises[tris_index], ray);
+
+            new_ray.origin = vec3_add(ray.origin, vec3_scalar_mult(ray.dir, distance_to_obj));
+
+            int samples = 0;
+            while(samples < DIFFUSE_SAMPLE_COUNT){
+                vec_3_t sample = vec3_normalize(vec3_generate_random_vector());
+                if(vec3_dot_product(normal, sample) > 0){
+                    new_ray.dir = sample;
+                    beam_eval_t temp_result = evaluate_ray(new_ray, trises, tris_length, recurse_depth);
+                    beam_result.col.r += (temp_result.col.r / DIFFUSE_SAMPLE_COUNT);
+                    beam_result.col.g += (temp_result.col.g / DIFFUSE_SAMPLE_COUNT);
+                    beam_result.col.b += (temp_result.col.b / DIFFUSE_SAMPLE_COUNT);
+                    samples++;
+                }
+            }
+            beam_result.col.r *= trises[tris_index].tris_col.r;
+            beam_result.col.g *= trises[tris_index].tris_col.g;
+            beam_result.col.b *= trises[tris_index].tris_col.b;
             break;
 
         case GLOSS:
-            vec_3_t reflection_position, inbound_beam_normalised, inbound_beam_scaled_to_reflection, outbound_beam;
-            ray_t new_ray;
-            ray_t normalised_ray = ray;
-            normalised_ray.dir = vec3_scalar_mult(normalised_ray.dir, 1/vec3_magnitude(ray.dir));
-            float distance_to_obj = doesRayIntersectTris(trises[tris_index], normalised_ray);
+            ray.dir = vec3_normalize(ray.dir);
+            distance_to_obj = doesRayIntersectTris(trises[tris_index], ray);
 
-            inbound_beam_normalised = vec3_scalar_mult(ray.dir, 1/vec3_magnitude(ray.dir));
-            inbound_beam_scaled_to_reflection = vec3_scalar_mult(inbound_beam_normalised, distance_to_obj);
-            new_ray.origin = vec3_add(ray.origin, inbound_beam_scaled_to_reflection);
-            new_ray.dir = vec_get_reflection(inbound_beam_normalised, trises[tris_index]);
+            new_ray.origin = vec3_add(ray.origin, vec3_scalar_mult(ray.dir, distance_to_obj));
+
+            new_ray.dir = vec_get_reflection(ray.dir, trises[tris_index]);
             beam_result = evaluate_ray(new_ray, trises, tris_length, recurse_depth);// next step
             break;
     }
@@ -148,7 +177,7 @@ void render(camera_t *cam)
         for (int x = 0; x < CAMERA_RES_X; x++)
         {
             ray_t camera_ray = construct_camera_ray(x, y);
-            camera_buffer[y][x] = evaluate_ray(camera_ray, trises, sizeof(trises)/sizeof(tris_t), 1);
+            camera_buffer[y][x] = evaluate_ray(camera_ray, trises, sizeof(trises)/sizeof(tris_t), 2);
         }
     }
     for (int y = 0; y < CAMERA_RES_Y; y++)
@@ -164,9 +193,9 @@ void update_loop(void){
     for (int i = 0; i < 8; i++){
         cube_points[i] = vec_rotate_3d(orig_cube_points[i], cube_rotation.x, cube_rotation.y, cube_rotation.z);
     }
-    cube_rotation.x += 3.14 / 140;
-    cube_rotation.y += 3.14 / 150;
-    cube_rotation.z += 3.14 / 130;
+    cube_rotation.x += 3.14 / 340;
+    cube_rotation.y += 3.14 / 350;
+    cube_rotation.z += 3.14 / 330;
 }
 
 void render_loop(void){
