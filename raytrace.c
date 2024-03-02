@@ -14,7 +14,7 @@
 #define DIFFUSE_SAMPLE_COUNT 100
 
 S2D_Window* win;
-beam_eval_t camera_buffer[CAMERA_RES_Y][CAMERA_RES_X];
+col_t camera_buffer[CAMERA_RES_Y][CAMERA_RES_X];
 
 vec_3_t camera_position = {
     .x = 0.0,
@@ -58,29 +58,29 @@ vec_3_t orig_cube_points[8] = {
 };
 
 vec_3_t cube_points[8];
-vec_3_t cube_rotation = {0,0,0};
+vec_3_t cube_rotation = {45/6.28, 45/6.28, 45/6.28};
 
 tris_t trises[] = {
-    {{&cube_points[0], &cube_points[2], &cube_points[4]}, C_RED, EMISSIVE}, // front surface
-    {{&cube_points[2], &cube_points[6], &cube_points[4]}, C_RED, EMISSIVE},
+    {{&cube_points[0], &cube_points[2], &cube_points[4]}, C_RED, MATTE}, // front surface
+    {{&cube_points[2], &cube_points[6], &cube_points[4]}, C_RED, MATTE},
 
-    {{&cube_points[0], &cube_points[1], &cube_points[3]}, C_GREEN, EMISSIVE}, // left surface
-    {{&cube_points[0], &cube_points[3], &cube_points[2]}, C_GREEN, EMISSIVE},
+    {{&cube_points[0], &cube_points[1], &cube_points[3]}, C_GREEN, MATTE}, // left surface
+    {{&cube_points[0], &cube_points[3], &cube_points[2]}, C_GREEN, MATTE},
 
     {{&cube_points[0], &cube_points[4], &cube_points[1]}, C_YELLOW, MATTE}, // bottom surface
     {{&cube_points[1], &cube_points[4], &cube_points[5]}, C_YELLOW, MATTE},
 
-    {{&cube_points[2], &cube_points[3], &cube_points[6]}, C_BLUE, EMISSIVE}, // top surface
-    {{&cube_points[3], &cube_points[7], &cube_points[6]}, C_BLUE, EMISSIVE},
+    {{&cube_points[2], &cube_points[3], &cube_points[6]}, C_BLUE, MATTE}, // top surface
+    {{&cube_points[3], &cube_points[7], &cube_points[6]}, C_BLUE, MATTE},
 
-    {{&cube_points[4], &cube_points[6], &cube_points[7]}, C_MAGENTA, EMISSIVE}, // right surface
-    {{&cube_points[4], &cube_points[7], &cube_points[5]}, C_MAGENTA, EMISSIVE},
+    {{&cube_points[4], &cube_points[6], &cube_points[7]}, C_MAGENTA, MATTE}, // right surface
+    {{&cube_points[4], &cube_points[7], &cube_points[5]}, C_MAGENTA, MATTE},
 
-    {{&cube_points[1], &cube_points[5], &cube_points[3]}, C_CYAN, EMISSIVE}, // back surface
-    {{&cube_points[3], &cube_points[5], &cube_points[7]}, C_CYAN, EMISSIVE},
+    {{&cube_points[1], &cube_points[5], &cube_points[3]}, C_CYAN, MATTE}, // back surface
+    {{&cube_points[3], &cube_points[5], &cube_points[7]}, C_CYAN, MATTE},
 
-    {{&light_points[0], &light_points[1], &light_points[2]}, C_WHITE, EMISSIVE},
-    {{&light_points[1], &light_points[2], &light_points[3]}, C_WHITE, EMISSIVE},
+    {{&light_points[0], &light_points[1], &light_points[2]}, C_WHITE, MATTE},
+    {{&light_points[1], &light_points[2], &light_points[3]}, C_WHITE, MATTE},
 
     {{&l2_points[0], &l2_points[1], &l2_points[2]}, C_WHITE, EMISSIVE},
     {{&l2_points[1], &l2_points[2], &l2_points[3]}, C_WHITE, EMISSIVE},
@@ -112,9 +112,9 @@ int find_closest_tris(ray_t ray, tris_t *trises, int tris_length){
     return best_guess;
 }
 
-beam_eval_t evaluate_ray(ray_t ray, tris_t *trises, int tris_length, int recurse_depth)
+col_t evaluate_ray(ray_t ray, tris_t *trises, int tris_length, int recurse_depth)
 {
-    beam_eval_t beam_result = {C_BLACK, NONE};
+    col_t beam_result = C_BLACK;
     if(recurse_depth-- < 0){
         return beam_result;
     }
@@ -128,8 +128,7 @@ beam_eval_t evaluate_ray(ray_t ray, tris_t *trises, int tris_length, int recurse
 
     switch(trises[tris_index].tris_surf){
         case EMISSIVE:
-            beam_result.col = trises[tris_index].tris_col;
-            beam_result.surf = EMISSIVE;
+            beam_result = trises[tris_index].tris_col;
             break;
 
         case MATTE:
@@ -145,16 +144,16 @@ beam_eval_t evaluate_ray(ray_t ray, tris_t *trises, int tris_length, int recurse
                 vec_3_t sample = vec3_normalize(vec3_generate_random_vector());
                 if(vec3_dot_product(normal, sample) > 0){
                     new_ray.dir = sample;
-                    beam_eval_t temp_result = evaluate_ray(new_ray, trises, tris_length, recurse_depth);
-                    beam_result.col.r += (temp_result.col.r / DIFFUSE_SAMPLE_COUNT);
-                    beam_result.col.g += (temp_result.col.g / DIFFUSE_SAMPLE_COUNT);
-                    beam_result.col.b += (temp_result.col.b / DIFFUSE_SAMPLE_COUNT);
+                    col_t temp_result = evaluate_ray(new_ray, trises, tris_length, recurse_depth);
+                    beam_result.r += (temp_result.r / DIFFUSE_SAMPLE_COUNT);
+                    beam_result.g += (temp_result.g / DIFFUSE_SAMPLE_COUNT);
+                    beam_result.b += (temp_result.b / DIFFUSE_SAMPLE_COUNT);
                     samples++;
                 }
             }
-            beam_result.col.r *= trises[tris_index].tris_col.r;
-            beam_result.col.g *= trises[tris_index].tris_col.g;
-            beam_result.col.b *= trises[tris_index].tris_col.b;
+            beam_result.r *= trises[tris_index].tris_col.r;
+            beam_result.g *= trises[tris_index].tris_col.g;
+            beam_result.b *= trises[tris_index].tris_col.b;
             break;
 
         case GLOSS:
@@ -184,7 +183,7 @@ void render(camera_t *cam)
     {
         for (int x = 0; x < CAMERA_RES_X; x++)
         {
-            draw_pixel(x, y, PIXEL_SIZE, PIXEL_SIZE, camera_buffer[y][x].col);
+            draw_pixel(x, y, PIXEL_SIZE, PIXEL_SIZE, camera_buffer[y][x]);
         }
     }
 }
