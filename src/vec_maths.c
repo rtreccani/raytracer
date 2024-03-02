@@ -158,7 +158,7 @@ vec_3_t vec_get_reflection(vec_3_t vec_in, tris_t tris){
     normal_normalised = vec3_scalar_mult(normal, 1/vec3_magnitude(normal));
 
     /* don't ask */
-    vec_3_t scaled_diff = vec3_scalar_mult(vec3_scalar_mult(normal_normalised, vec3_dot_product(vec_in, normal_normalised)), 2);
+        vec_3_t scaled_diff = vec3_scalar_mult(normal, vec3_dot_product(vec_in, normal));
     vec_out = vec3_subtract(vec_in, scaled_diff);
     return vec_out;
 }
