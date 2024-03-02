@@ -113,9 +113,6 @@ float doesRayIntersectTris(tris_t tris, ray_t ray){
 
     /*check if ray and tris are parallel */
     float n_dot_ray_dir = vec3_dot_product(normal, ray.dir);
-    if(abs(n_dot_ray_dir) < EPSILON){
-        return -1.0;
-    }
 
     float d = -1 * vec3_dot_product(normal, *tris.p_points[0]);
     float t = -1 * ((vec3_dot_product(normal, ray.origin) + d) / n_dot_ray_dir);
